@@ -419,9 +419,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
 (function () {
   'use strict';
 
-  /* ---------------------------------------------------------------
-   * Storage
-   * ------------------------------------------------------------- */
   var LS_NAMES = 'won_names_v1';
   var LS_SETTINGS = 'won_settings_v1';
 
@@ -467,9 +464,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
   var names = loadNames();
   var settings = loadSettings();
 
-  /* ---------------------------------------------------------------
-   * DOM references
-   * ------------------------------------------------------------- */
   var canvas = document.getElementById('wheelCanvas');
   var ctx = canvas.getContext('2d');
   var spinBtn = document.getElementById('spinBtn');
@@ -497,12 +491,9 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
 
   var PALETTE = ['#F2A93B', '#F4623A', '#4FA6A0', '#8E5572', '#E8C547', '#3D7068', '#D9695F', '#6B4E71'];
 
-  var rotation = 0;   // current wheel rotation, radians
+  var rotation = 0;  
   var spinning = false;
 
-  /* ---------------------------------------------------------------
-   * Canvas sizing (crisp on retina / mobile)
-   * ------------------------------------------------------------- */
   function resizeCanvas() {
     var wrap = canvas.parentElement;
     var size = Math.min(wrap.clientWidth, 520);
@@ -516,9 +507,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
   }
   window.addEventListener('resize', resizeCanvas);
 
-  /* ---------------------------------------------------------------
-   * Wheel drawing
-   * ------------------------------------------------------------- */
   function drawWheel() {
     var W = canvas.clientWidth || 520;
     var H = canvas.clientHeight || 520;
@@ -575,22 +563,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     ctx.restore();
   }
 
-  /* ---------------------------------------------------------------
-   * Winner selection
-   *
-   * settings.rigNames   -> seed list, edited in Settings
-   * settings.rigEnabled -> the "Only seed entries can win" checkbox under
-   *                         the Spin button
-   *
-   * If rigNames is empty, selection is always a plain uniform draw.
-   * If rigNames is non-empty:
-   *   - rigEnabled = true  -> winner is drawn ONLY from names that match
-   *                           the seed list, as long as at least one match
-   *                           is currently on the wheel.
-   *   - rigEnabled = false -> names on the seed list are excluded from the
-   *                           draw entirely, as long as that doesn't
-   *                           remove every name from the wheel.
-   * ------------------------------------------------------------- */
   function pickWinnerIndex() {
     var rigSet = {};
     var rigCount = 0;
@@ -614,9 +586,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
-  /* ---------------------------------------------------------------
-   * Spin animation
-   * ------------------------------------------------------------- */
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
   function spin() {
@@ -629,7 +598,7 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     var winnerIdx = pickWinnerIndex();
     var n = names.length;
     var slice = (Math.PI * 2) / n;
-    var pointerAngle = 0; // pointer is fixed at the right edge (canvas angle 0 = 3 o'clock)
+    var pointerAngle = 0; 
     var winnerCenter = winnerIdx * slice + slice / 2;
 
     var targetMod = (((pointerAngle - winnerCenter) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -677,9 +646,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     requestAnimationFrame(frame);
   }
 
-  /* ---------------------------------------------------------------
-   * Sound (Web Audio API — no audio files needed)
-   * ------------------------------------------------------------- */
   var audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) {
@@ -723,9 +689,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     } catch (e) {}
   }
 
-  /* ---------------------------------------------------------------
-   * Confetti (lightweight, self-contained — no external library)
-   * ------------------------------------------------------------- */
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function launchConfetti() {
@@ -770,9 +733,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     step();
   }
 
-  /* ---------------------------------------------------------------
-   * Winner modal
-   * ------------------------------------------------------------- */
   function announceWinner(name, idx) {
     lastWinnerName = name;
     lastWinnerIndex = idx;
@@ -786,8 +746,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
   });
   removeWinnerBtn.addEventListener('click', function () {
     if (lastWinnerName === null) { winnerModal.classList.add('hidden'); return; }
-    // Prefer the exact slot that won; fall back to the first matching
-    // name in case the list changed while the modal was open.
     var idx = (lastWinnerIndex !== null && names[lastWinnerIndex] === lastWinnerName)
       ? lastWinnerIndex
       : names.indexOf(lastWinnerName);
@@ -799,17 +757,10 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     winnerModal.classList.add('hidden');
   });
 
-  /* ---------------------------------------------------------------
-   * Entries: one textarea, one name per line. The wheel updates as you
-   * type or paste; there is no separate Add button or list.
-   * ------------------------------------------------------------- */
   function parseNames(text) {
     return text.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   }
 
-  // rewriteTextarea is only true when the list was changed by code
-  // (shuffle, remove winner, initial load). While typing it stays false
-  // so the cursor never jumps.
   function renderNamesList(rewriteTextarea) {
     if (rewriteTextarea) namesInput.value = names.join('\n');
     drawWheel();
@@ -823,7 +774,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     renderNamesList(false);
   });
 
-  // Shuffle: Fisher-Yates re-randomises the order of the entries.
   shuffleBtn.addEventListener('click', function () {
     if (spinning || names.length < 2) return;
     for (var i = names.length - 1; i > 0; i--) {
@@ -840,10 +790,6 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); spin(); }
   });
 
-  /* ---------------------------------------------------------------
-   * Settings panel (gear button): spin duration, sound, confetti and
-   * the seed list.
-   * ------------------------------------------------------------- */
   function openSettingsPanel(focusSeedList) {
     spinDurationInput.value = settings.spinDuration;
     soundToggle.checked = !!settings.sound;
@@ -867,19 +813,12 @@ textarea { width: 100%; resize: vertical; margin-bottom: 10px; }
     closeSettingsPanel();
   });
 
-  /* ---------------------------------------------------------------
-   * Seed checkbox (main page, under the Spin button). Applies
-   * immediately; no Save needed.
-   * ------------------------------------------------------------- */
   rigToggleMain.checked = !!settings.rigEnabled;
   rigToggleMain.addEventListener('change', function () {
     settings.rigEnabled = rigToggleMain.checked;
     saveSettings(settings);
   });
 
-  /* ---------------------------------------------------------------
-   * Init
-   * ------------------------------------------------------------- */
   renderNamesList(true);
   resizeCanvas();
 })();
